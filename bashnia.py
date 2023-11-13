@@ -31,7 +31,10 @@ class Disk:
         self.color = color
 
 # Определение дисков и башен
-towers = [[Disk(5, (255, 0, 0)), Disk(4, (255, 255, 0)), Disk(3, (0, 255, 0)), Disk(2, (0, 255, 255)), Disk(1, (0, 0, 255))], [], []]
+towers = [[Disk(10, (255, 0, 0)), Disk(9, (255, 255, 0)), Disk(8, (0, 255, 0)), Disk(7, (0, 255, 255)), Disk(6, (0, 0, 255)), Disk(5, (255, 0, 255)), Disk(4, (255, 128, 0)), Disk(3, (128, 255, 0)), Disk(2, (0, 128, 255)), Disk(1, (128, 0, 255))],
+     [], []]
+
+
 
 # Определение функции отрисовки башен и дисков
 def draw_towers():
@@ -49,15 +52,46 @@ def move_disk(source, target):
         disk = towers[source].pop()
         towers[target].append(disk)
 
+def create_towers(num_disks):
+    return [
+        [Disk(num_disks - i, (255, 255 - (25 * i), 20 * i)) for i in range(num_disks)],
+        [],
+        []
+    ]
+
+# Функция для отрисовки кнопок с числом дисков
+def draw_disk_button(num_disks):
+    font = pygame.font.Font(None, 35)
+    text = font.render("Количество дисков", True, BLACK)
+    pygame.draw.rect(screen, (200, 200, 200), (50, 50, 250, 50))  # Button-like appearance
+    screen.blit(text, (60, 60))
+    text_num = font.render(str(num_disks), True, BLACK)
+    screen.blit(text_num, ( 320, 60)) 
+
+# Функция для проверки нажатия на кнопку числа дисков
+def check_disk_button(pos):
+    if 50 <= pos[0] <= 150 and 50 <= pos[1] <= 100:
+        return True
+    return False
+
 # Определение главного цикла игры
 def main():
     clock = pygame.time.Clock()
+    num_disks = 5  # Default number of disks
+    global towers
+    towers = create_towers(num_disks) 
+   
 
     while True:
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 pygame.quit()
                 sys.exit()
+            if event.type == pygame.MOUSEBUTTONDOWN:
+                mouse_pos = pygame.mouse.get_pos()
+                if check_disk_button(mouse_pos):
+                    num_disks = (num_disks % 10) + 1  # Изменение числа дисков при клике на кнопку
+                    towers = create_towers(num_disks)  # Обновить башни при изменении числа дисков
 
             # Обработка событий клавиш
             if event.type == pygame.KEYDOWN:
@@ -74,12 +108,10 @@ def main():
                 elif event.key == pygame.K_6:
                     move_disk(2, 1)
 
-        # Отрисовка
         screen.fill(WHITE)
         draw_towers()
+        draw_disk_button(num_disks)  # Отрисовка кнопки
         pygame.display.flip()
-
-        # Ограничение частоты кадров
         clock.tick(30)
 
 if __name__ == "__main__":
