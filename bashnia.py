@@ -82,18 +82,19 @@ class GameWindow:
             if event.button == 1:
                 for tower_index, tower in enumerate(self.towers):
                     for disk_index, disk in enumerate(tower):
-                        x = tower_index * 200 + (800 - 3 * 200) // 2
-                        disk_rect = pygame.Rect(
-                            x - disk.size * 15 + 10 // 2,
-                            400 - (disk_index + 1) * 20,
-                            disk.size * 30,
-                            20,
-                        )
-                        if disk_rect.collidepoint(event.pos):
-                            self.selected_disk = self.towers[tower_index].pop(disk_index)
-                            self.dragging = True
-                            self.offset_x = event.pos[0] - disk_rect.x
-                            self.offset_y = event.pos[1] - disk_rect.y
+                        if disk is not None:  # Добавим проверку на None
+                            x = tower_index * 200 + (800 - 3 * 200) // 2
+                            disk_rect = pygame.Rect(
+                                x - disk.size * 15 + 10 // 2,
+                                400 - (disk_index + 1) * 20,
+                                disk.size * 30,
+                                20,
+                            )
+                            if disk_rect.collidepoint(event.pos):
+                                self.selected_disk = self.towers[tower_index].pop(disk_index)
+                                self.dragging = True
+                                self.offset_x = event.pos[0] - disk_rect.x
+                                self.offset_y = event.pos[1] - disk_rect.y
 
         elif event.type == pygame.MOUSEBUTTONUP:
             if event.button == 1:
@@ -109,8 +110,9 @@ class GameWindow:
         elif event.type == pygame.MOUSEMOTION:
             if self.dragging:
                 x, y = event.pos
-                self.selected_disk.x = x - self.offset_x
-                self.selected_disk.y = y - self.offset_y
+                if self.selected_disk is not None:
+                    self.selected_disk.x = x - self.offset_x
+                    self.selected_disk.y = y - self.offset_y
 
 def create_towers(num_disks):
     return [
