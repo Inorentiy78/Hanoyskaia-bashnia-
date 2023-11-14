@@ -1,56 +1,57 @@
 import pygame
 import sys
 
-# Инициализация Pygame
-pygame.init()
-
-# Определение цветов
-WHITE = (255, 255, 255)
-BLACK = (0, 0, 0)
-
-# Определение параметров дисков
-DISK_WIDTH = 30
-DISK_HEIGHT = 20
-
-# Определение параметров башен
-TOWER_WIDTH = 10
-TOWER_HEIGHT = 200
-TOWER_SPACING = 200  # Изменено на более широкий интервал
-
-# Определение параметров окна
-WIDTH = 800  # Увеличено для увеличения ширины столбцов
-HEIGHT = 400
-
-# Инициализация экрана
-screen = pygame.display.set_mode((WIDTH, HEIGHT))
-pygame.display.set_caption("Ханойская башня")
-
 class Disk:
     def __init__(self, size, color):
         self.size = size
         self.color = color
 
-# Определение дисков и башен
-towers = [[Disk(10, (255, 0, 0)), Disk(9, (255, 255, 0)), Disk(8, (0, 255, 0)), Disk(7, (0, 255, 255)), Disk(6, (0, 0, 255)), Disk(5, (255, 0, 255)), Disk(4, (255, 128, 0)), Disk(3, (128, 255, 0)), Disk(2, (0, 128, 255)), Disk(1, (128, 0, 255))],
-     [], []]
+class SettingsWindow:
+    def __init__(self):
+        self.num_disks = 5
+        self.is_start_phase = True
+        self.button_rect = pygame.Rect(50, 50, 200, 50)
+        self.start_button_rect = pygame.Rect(50, 120, 250, 50)
 
+    def draw(self, screen):
+        font = pygame.font.Font(None, 35)
+        text = font.render("Количество дисков:", True, (0, 0, 0))
+        text_num = font.render(str(self.num_disks), True, (0, 0, 0))
 
+        text_width = text.get_width() + text_num.get_width() + 20
+        pygame.draw.rect(screen, (200, 200, 200), self.button_rect)
+        screen.blit(text, (self.button_rect.x + 10, self.button_rect.centery - text.get_height() // 2))
+        screen.blit(text_num, (self.button_rect.right - text_num.get_width() - 10, self.button_rect.centery - text_num.get_height() // 2))
 
-# Определение функции отрисовки башен и дисков
-def draw_towers():
-    for i, tower in enumerate(towers):
-        x = i * TOWER_SPACING + (WIDTH - 3 * TOWER_SPACING) // 2  # Разместить столбцы в центре
-        pygame.draw.rect(screen, BLACK, (x, HEIGHT - TOWER_HEIGHT, TOWER_WIDTH, TOWER_HEIGHT))
-        for j, disk in enumerate(tower):
-            disk_width = disk.size * DISK_WIDTH
-            disk_height = DISK_HEIGHT
-            pygame.draw.rect(screen, disk.color, (x - disk_width // 2 + TOWER_WIDTH // 2, HEIGHT - (j + 1) * disk_height, disk_width, disk_height))
+        if self.is_start_phase:
+            start_text = font.render("Пуск", True, (0, 255, 0))
+            pygame.draw.rect(screen, (0, 255, 0), self.start_button_rect)
+            screen.blit(start_text, (self.start_button_rect.x + 10, self.start_button_rect.centery - start_text.get_height() // 2))
 
-# Определение функции перемещения диска
-def move_disk(source, target):
-    if towers[source] and (not towers[target] or towers[source][-1].size < towers[target][-1].size):
-        disk = towers[source].pop()
-        towers[target].append(disk)
+    def check_button_click(self, pos):
+        if self.is_start_phase and self.start_button_rect.collidepoint(pos):
+            self.is_start_phase = False
+        elif self.button_rect.collidepoint(pos):
+            self.num_disks += 1
+            if self.num_disks > 10:
+                self.num_disks = 1
+
+class GameWindow:
+    def __init__(self, num_disks):
+        self.towers = create_towers(num_disks)
+
+    def draw(self, screen):
+        for i, tower in enumerate(self.towers):
+            x = i * 200 + (800 - 3 * 200) // 2
+            pygame.draw.rect(screen, (0, 0, 0), (x, 400 - 200, 10, 200))
+            for j, disk in enumerate(tower):
+                disk_width = disk.size * 30
+                disk_height = 20
+                pygame.draw.rect(
+                    screen,
+                    disk.color,
+                    (x - disk_width // 2 + 10 // 2, 400 - (j + 1) * disk_height, disk_width, disk_height),
+                )
 
 def create_towers(num_disks):
     return [
@@ -59,46 +60,14 @@ def create_towers(num_disks):
         []
     ]
 
-# Функция для отрисовки кнопок с числом дисков
-def draw_disk_button(num_disks, is_start_button):
-    font = pygame.font.Font(None, 35)
-    text = font.render("Количество дисков", True, BLACK)
-    text_num = font.render(str(num_disks), True, BLACK)
-
-    text_width = text.get_width() + text_num.get_width() + 20  # Calculate total width for the text and spacing
-    button_rect = pygame.Rect(50, 50, text_width, 50)  # Use calculated text width
-
-    pygame.draw.rect(screen, (200, 200, 200), button_rect)
-    screen.blit(text, (button_rect.x + 10, 60))  # Adjust text position based on the button rectangle
-    screen.blit(text_num, (button_rect.right - text_num.get_width() - 10, 60))  # Adjust the 'num_disks' position
-
-    if is_start_button:
-        start_text = font.render("Пуск", True, BLACK)
-        start_button_rect = pygame.Rect(50, 120, 250, 50)
-        pygame.draw.rect(screen, (0, 255, 0), start_button_rect)  # Green color for the start button
-        screen.blit(start_text, (start_button_rect.x + 10, 130))
-
-        return button_rect, start_button_rect  # Return both button rectangles for click check
-    else:
-        return button_rect 
-is_start_phase = True  # Initial state
-num_disks = 5
-
-
-# Функция для проверки нажатия на кнопку числа дисков
-def check_disk_button(pos):
-    if 50 <= pos[0] <= 200 and 50 <= pos[1] <= 100:
-        return True
-    return False
-
-can_change_disks = True
-
 def main():
-    clock = pygame.time.Clock()
-    global is_start_phase
-    global num_disks
-    global towers
-    global can_change_disks  # Делаем переменную глобальной
+    pygame.init()
+    WIDTH, HEIGHT = 800, 400
+    screen = pygame.display.set_mode((WIDTH, HEIGHT))
+    pygame.display.set_caption("Ханойская башня")
+
+    settings_window = SettingsWindow()
+    game_window = None
 
     while True:
         for event in pygame.event.get():
@@ -107,48 +76,18 @@ def main():
                 sys.exit()
             if event.type == pygame.MOUSEBUTTONDOWN:
                 mouse_pos = pygame.mouse.get_pos()
+                settings_window.check_button_click(mouse_pos)
 
-                if can_change_disks and 50 <= mouse_pos[0] <= 200 and 50 <= mouse_pos[1] <= 100:
-                    # Проверяем, разрешено ли изменение числа дисков и клик на кнопке
-                    num_disks += 1  # Увеличиваем количество дисков
-                    if num_disks > 10:  # Ограничиваем количество дисков
-                        num_disks = 1
-                    towers = create_towers(num_disks)  # Обновляем башни
+        screen.fill((255, 255, 255))
 
-                elif is_start_phase:
-                    button_rect, start_button_rect = draw_disk_button(num_disks, is_start_button=True)
-                    if start_button_rect.collidepoint(mouse_pos):
-                        is_start_phase = False
-                        can_change_disks = False  # Запрещаем изменение числа дисков после нажатия "Пуск"
-
-        screen.fill(WHITE)
-        draw_towers()
-        if is_start_phase:
-            draw_disk_button(num_disks, is_start_button=True)  # Рисуем кнопку "Пуск"
+        if settings_window.is_start_phase:
+            settings_window.draw(screen)
         else:
-            draw_disk_button(num_disks, is_start_button=False)  # Рисуем кнопку изменения числа дисков
-            # Другие действия в зависимости от ввода пользователя (например, перемещение дисков)
+            if game_window is None:
+                game_window = GameWindow(settings_window.num_disks)
+            game_window.draw(screen)
 
         pygame.display.flip()
-        clock.tick(30)
-                    
-
 
 if __name__ == "__main__":
     main()
-
-
-
-"""if event.type == pygame.KEYDOWN:
-                    if event.key == pygame.K_1:
-                        move_disk(0, 1)
-                    elif event.key == pygame.K_2:
-                        move_disk(0, 2)
-                    elif event.key == pygame.K_3:
-                        move_disk(1, 0)
-                    elif event.key == pygame.K_4:
-                        move_disk(1, 2)
-                    elif event.key == pygame.K_5:
-                        move_disk(2, 0)
-                    elif event.key == pygame.K_6:
-                        move_disk(2, 1)"""
