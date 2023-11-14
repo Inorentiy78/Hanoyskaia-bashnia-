@@ -10,7 +10,7 @@ class SettingsWindow:
     def __init__(self):
         self.num_disks = 5
         self.is_start_phase = True
-        self.button_rect = pygame.Rect(50, 50, 200, 50)
+        self.button_rect = pygame.Rect(50, 50, 300, 50)
         self.start_button_rect = pygame.Rect(50, 120, 250, 50)
 
     def draw(self, screen):
@@ -24,7 +24,7 @@ class SettingsWindow:
         screen.blit(text_num, (self.button_rect.right - text_num.get_width() - 10, self.button_rect.centery - text_num.get_height() // 2))
 
         if self.is_start_phase:
-            start_text = font.render("Пуск", True, (0, 255, 0))
+            start_text = font.render("Пуск", True, (0, 0, 0))
             pygame.draw.rect(screen, (0, 255, 0), self.start_button_rect)
             screen.blit(start_text, (self.start_button_rect.x + 10, self.start_button_rect.centery - start_text.get_height() // 2))
 
