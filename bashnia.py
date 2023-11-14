@@ -91,15 +91,14 @@ def check_disk_button(pos):
         return True
     return False
 
-is_start_phase = True  # Initial state
-num_disks = 5
-towers = create_towers(num_disks)
+can_change_disks = True
 
 def main():
     clock = pygame.time.Clock()
     global is_start_phase
     global num_disks
     global towers
+    global can_change_disks  # Делаем переменную глобальной
 
     while True:
         for event in pygame.event.get():
@@ -109,26 +108,26 @@ def main():
             if event.type == pygame.MOUSEBUTTONDOWN:
                 mouse_pos = pygame.mouse.get_pos()
 
-                if not is_start_phase and 50 <= mouse_pos[0] <= 200 and 50 <= mouse_pos[1] <= 100:
-                    # Check if the mouse is in the disk selection button area only when it's not the start phase
-                    num_disks += 1  # Increment the number of disks
-                    if num_disks > 10:  # Limit the number of disks to 10
+                if can_change_disks and 50 <= mouse_pos[0] <= 200 and 50 <= mouse_pos[1] <= 100:
+                    # Проверяем, разрешено ли изменение числа дисков и клик на кнопке
+                    num_disks += 1  # Увеличиваем количество дисков
+                    if num_disks > 10:  # Ограничиваем количество дисков
                         num_disks = 1
+                    towers = create_towers(num_disks)  # Обновляем башни
 
-                    # Update towers with the new number of disks
-                    towers = create_towers(num_disks)
                 elif is_start_phase:
                     button_rect, start_button_rect = draw_disk_button(num_disks, is_start_button=True)
                     if start_button_rect.collidepoint(mouse_pos):
                         is_start_phase = False
+                        can_change_disks = False  # Запрещаем изменение числа дисков после нажатия "Пуск"
 
         screen.fill(WHITE)
         draw_towers()
         if is_start_phase:
-            draw_disk_button(num_disks, is_start_button=True)  # Draw the start button
+            draw_disk_button(num_disks, is_start_button=True)  # Рисуем кнопку "Пуск"
         else:
-            draw_disk_button(num_disks, is_start_button=False)  # Draw the disk selection button
-            # Perform other actions based on user input (e.g., move disk)
+            draw_disk_button(num_disks, is_start_button=False)  # Рисуем кнопку изменения числа дисков
+            # Другие действия в зависимости от ввода пользователя (например, перемещение дисков)
 
         pygame.display.flip()
         clock.tick(30)
