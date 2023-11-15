@@ -5,8 +5,10 @@ class Disk:
     def __init__(self, size, color):
         self.size = size
         self.color = color
-        self.x = 0  # координата X
-        self.y = 0  # координата Y
+        self.rect = None  # Добавляем атрибут rect для представления прямоугольника
+        self.dragging = False
+        self.offset_x = 0
+        self.offset_y = 0
 
 class SettingsWindow:
     def __init__(self):
@@ -44,7 +46,8 @@ class GameWindow:
         self.steps = []  # Добавляем список для хранения шагов
         self.dragging = False
         self.selected_disk = None
-        self.offset_x = 0  # Добавляем атрибут для хранения смещения при перетаскивании
+        self.offset_x = 0
+        self.offset_y = 0
 
     def draw(self, screen):
         for i, tower in enumerate(self.towers):
@@ -54,11 +57,12 @@ class GameWindow:
                 disk_width = disk.size * 30
                 disk_height = 20
                 if disk == self.selected_disk and self.dragging:
-                    # Используем анимацию для плавного перемещения
                     pygame.draw.rect(
                         screen,
                         disk.color,
-                        (disk.x + (x - disk.size * 15 + 10 // 2 - disk.x) * 0.2, disk.y - (disk.y - (400 - (j + 1) * 20)) * 0.2, disk_width, disk_height),
+                        (disk.rect.x + (x - disk.size * 15 + 10 // 2 - disk.rect.x) * 0.2,
+                         disk.rect.y - (disk.rect.y - (400 - (j + 1) * 20)) * 0.2,
+                         disk_width, disk_height),
                     )
                 else:
                     pygame.draw.rect(
@@ -71,6 +75,8 @@ class GameWindow:
         self.steps.append((move_from, move_to))
 
     def handle_events(self, event):
+        target_tower_index = None  # Установите начальное значение переменной перед использованием
+
         if event.type == pygame.MOUSEBUTTONDOWN:
             if event.button == 1:
                 for tower_index, tower in enumerate(self.towers):
@@ -92,7 +98,8 @@ class GameWindow:
         elif event.type == pygame.MOUSEBUTTONUP:
             if event.button == 1:
                 if self.dragging and self.selected_disk is not None:
-                    target_tower_index = int((event.pos[0] + 100) / 200)
+                    target_tower_index = int((event.pos[0] - 50) / 200)
+
                     if 0 <= target_tower_index < len(self.towers):
                         target_tower = self.towers[target_tower_index]
                         if not target_tower or (target_tower[-1] is not None and hasattr(target_tower[-1], 'size') and (not hasattr(self.selected_disk, 'size') or (self.selected_disk.size < target_tower[-1].size))):
@@ -111,6 +118,10 @@ class GameWindow:
                 # Обновляем позицию выбранного диска в соответствии с текущими координатами мыши
                 self.selected_disk.x = event.pos[0] - self.offset_x
                 self.selected_disk.y = event.pos[1] - self.offset_y
+
+        # Используйте target_tower_index после блока обработки событий
+        if target_tower_index is not None:
+            print(f"Selected Tower: {target_tower_index}")
 
 def create_towers(num_disks):
     return [
