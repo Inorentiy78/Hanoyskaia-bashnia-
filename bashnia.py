@@ -19,6 +19,20 @@ class SettingsWindow:
         self.is_start_phase = True
         self.button_rect = pygame.Rect(50, 50, 300, 50)
         self.start_button_rect = pygame.Rect(50, 120, 250, 50)
+        self.right_animation_counter = 0
+
+    def draw_right_animation(self, screen):
+        if self.right_animation_counter > 0:
+            font = pygame.font.Font(None, 36)
+            text = font.render("Правильно!", True, (0, 255, 0))
+            text_rect = text.get_rect(center=(WIDTH // 2, HEIGHT // 2))
+            screen.blit(text, text_rect)
+            self.right_animation_counter -= 1
+
+    def check_restart_button_click(self, pos):
+        if not self.is_start_phase and self.restart_button_rect.collidepoint(pos):
+            return True
+        return False
 
     def draw(self, screen):
         font = pygame.font.Font(None, 35)
@@ -51,6 +65,8 @@ class GameWindow:
         self.selected_disk = None
         self.offset_x = 0
         self.offset_y = 0
+        self.restart_game = False
+        self.win_animation_counter = 0
 
     def draw_selected_disk(self, screen, mouse_pos):
         if self.selected_disk is not None:
@@ -64,7 +80,14 @@ class GameWindow:
                 (x - disk_width // 2 + 10 // 2, y, disk_width, disk_height),
             )
 
-    def draw(self, screen):
+    def draw_win_animation(self, screen):
+        pygame.draw.rect(screen, (0, 255, 0), (0, 0, WIDTH, HEIGHT), 10)
+        font = pygame.font.Font(None, 36)
+        text = font.render("Победа! Нажмите 'Заново'", True, (0, 0, 0))
+        text_rect = text.get_rect(center=(WIDTH // 2, HEIGHT // 2))
+        screen.blit(text, text_rect)
+
+    def draw(self, screen, settings_window):
         for i, tower in enumerate(self.towers):
             x = i * 200 + (800 - 3 * 200) // 2
             pygame.draw.rect(screen, (0, 0, 0), (x, 400 - 200, 10, 200))
@@ -77,7 +100,10 @@ class GameWindow:
                     (x - disk_width // 2 + 10 // 2, 400 - (j + 1) * disk_height, disk_width, disk_height),
                 )
 
-        self.draw_selected_disk(screen, pygame.mouse.get_pos())
+        if self.check_win(settings_window):
+            self.draw_win_animation(screen)
+        else:
+            self.draw_selected_disk(screen, pygame.mouse.get_pos())
 
     def add_step(self, move_from, move_to):
         self.steps.append((move_from, move_to))
@@ -135,6 +161,9 @@ class GameWindow:
         tower = self.towers[tower_index]
         return tower[-1] if tower else None
 
+    def check_win(self, settings_window):
+        return len(self.towers[2]) == settings_window.num_disks
+
     def update(self):
         if self.selected_disk is not None:
             original_tower_index = self.selected_disk.original_tower
@@ -151,6 +180,7 @@ def create_towers(num_disks):
 
 def main():
     pygame.init()
+    global WIDTH, HEIGHT
     WIDTH, HEIGHT = 800, 400
     screen = pygame.display.set_mode((WIDTH, HEIGHT))
     pygame.display.set_caption("Ханойская башня")
@@ -170,6 +200,10 @@ def main():
                     settings_window.check_button_click(mouse_pos)
             elif game_window is not None:
                 game_window.handle_events(event)
+                if game_window.check_win(settings_window):
+                    # Показываем анимацию "Правильно!" на 60 кадров
+                    settings_window.right_animation_counter = 60
+                    game_window = None  # Сбрасываем игру
 
         screen.fill((255, 255, 255))
 
@@ -178,9 +212,12 @@ def main():
         else:
             if game_window is None:
                 game_window = GameWindow(settings_window.num_disks)
-            game_window.draw(screen)
+            game_window.draw(screen, settings_window)
+
+        settings_window.draw_right_animation(screen)
 
         pygame.display.flip()
+        pygame.time.Clock().tick(60)
 
 if __name__ == "__main__":
     main()
