@@ -52,6 +52,18 @@ class GameWindow:
         self.offset_x = 0
         self.offset_y = 0
 
+    def draw_selected_disk(self, screen, mouse_pos):
+        if self.selected_disk is not None:
+            disk_width = self.selected_disk.size * 30
+            disk_height = 20
+            x = mouse_pos[0] - self.offset_x
+            y = mouse_pos[1] - self.offset_y
+            pygame.draw.rect(
+                screen,
+                self.selected_disk.color,
+                (x - disk_width // 2 + 10 // 2, y, disk_width, disk_height),
+            )
+
     def draw(self, screen):
         for i, tower in enumerate(self.towers):
             x = i * 200 + (800 - 3 * 200) // 2
@@ -64,6 +76,8 @@ class GameWindow:
                     disk.color,
                     (x - disk_width // 2 + 10 // 2, 400 - (j + 1) * disk_height, disk_width, disk_height),
                 )
+
+        self.draw_selected_disk(screen, pygame.mouse.get_pos())
 
     def add_step(self, move_from, move_to):
         self.steps.append((move_from, move_to))
