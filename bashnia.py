@@ -20,7 +20,42 @@ class SettingsWindow:
         self.button_rect = pygame.Rect(50, 50, 300, 50)
         self.start_button_rect = pygame.Rect(50, 120, 250, 50)
         self.right_animation_counter = 0
+        self.restart_question_shown = False
+        
+    
+    def draw_restart_question(self, screen):
+        if self.restart_question_shown:
+            font = pygame.font.Font(None, 36)
+            text = font.render("Хотите начать заново?", True, (0, 0, 0))
+            yes_text = font.render("Да", True, (0, 255, 0))
+            no_text = font.render("Нет", True, (255, 0, 0))
 
+            text_rect = text.get_rect(center=(WIDTH // 2, HEIGHT // 2 - 30))
+            screen.blit(text, text_rect)
+
+            yes_rect = yes_text.get_rect(center=(WIDTH // 2 - 50, HEIGHT // 2 + 20))
+            screen.blit(yes_text, yes_rect)
+
+            no_rect = no_text.get_rect(center=(WIDTH // 2 + 50, HEIGHT // 2 + 20))
+            screen.blit(no_text, no_rect)
+
+            self.restart_yes_rect = pygame.Rect(yes_rect.x - 10, yes_rect.y - 10, yes_rect.width + 20, yes_rect.height + 20)
+            self.restart_no_rect = pygame.Rect(no_rect.x - 10, no_rect.y - 10, no_rect.width + 20, no_rect.height + 20)
+
+    def handle_restart_question(self, event):
+        if self.restart_question_shown:
+            if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
+                if self.restart_yes_rect.collidepoint(event.pos):
+                    self.is_start_phase = True
+                    self.restart_question_shown = False
+                    self.num_disks = 5
+                    self.show_icon = False
+                    self.restart_question_counter -= 1
+                elif self.restart_no_rect.collidepoint(event.pos):
+                    pygame.quit()
+                    sys.exit()
+                    
+    
     def draw_right_animation(self, screen):
         if self.right_animation_counter > 0:
             font = pygame.font.Font(None, 36)
@@ -28,7 +63,10 @@ class SettingsWindow:
             text_rect = text.get_rect(center=(WIDTH // 2, HEIGHT // 2))
             screen.blit(text, text_rect)
             self.right_animation_counter -= 1
-
+            if self.right_animation_counter == 0:
+                self.restart_question_shown = True
+                self.restart_question_counter += 1
+    
     def check_restart_button_click(self, pos):
         if not self.is_start_phase and self.restart_button_rect.collidepoint(pos):
             return True
@@ -162,7 +200,10 @@ class GameWindow:
         return tower[-1] if tower else None
 
     def check_win(self, settings_window):
-        return len(self.towers[2]) == settings_window.num_disks
+        if len(self.towers[2]) == settings_window.num_disks:
+            settings_window.restart_question_counter = 100
+            return True
+        return False
 
     def update(self):
         if self.selected_disk is not None:
@@ -201,9 +242,11 @@ def main():
             elif game_window is not None:
                 game_window.handle_events(event)
                 if game_window.check_win(settings_window):
-                    # Показываем анимацию "Правильно!" на 60 кадров
                     settings_window.right_animation_counter = 100
-                    game_window = None  # Сбрасываем игру
+                    settings_window.restart_question_shown = True
+                    game_window = None
+
+            settings_window.handle_restart_question(event)
 
         screen.fill((255, 255, 255))
 
@@ -215,6 +258,7 @@ def main():
             game_window.draw(screen, settings_window)
 
         settings_window.draw_right_animation(screen)
+        settings_window.draw_restart_question(screen)
 
         pygame.display.flip()
         pygame.time.Clock().tick(60)
