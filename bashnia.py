@@ -202,7 +202,7 @@ def main():
                 game_window.handle_events(event)
                 if game_window.check_win(settings_window):
                     # Показываем анимацию "Правильно!" на 60 кадров
-                    settings_window.right_animation_counter = 60
+                    settings_window.right_animation_counter = 100
                     game_window = None  # Сбрасываем игру
 
         screen.fill((255, 255, 255))
