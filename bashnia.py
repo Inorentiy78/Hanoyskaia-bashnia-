@@ -9,8 +9,9 @@ class Disk:
         self.dragging = False
         self.offset_x = 0
         self.offset_y = 0
-        self.original_tower = None  # Новый атрибут для запоминания исходной башни
-        self.original_position = None  # Новый атрибут для запоминания исходной позиции
+        self.original_tower = None
+        self.original_position = None
+        self.original_tower_index = None
 
 class SettingsWindow:
     def __init__(self):
@@ -45,7 +46,7 @@ class SettingsWindow:
 class GameWindow:
     def __init__(self, num_disks):
         self.towers = create_towers(num_disks)
-        self.steps = []  # Добавляем список для хранения шагов
+        self.steps = []
         self.dragging = False
         self.selected_disk = None
         self.offset_x = 0
@@ -58,73 +59,74 @@ class GameWindow:
             for j, disk in enumerate(tower):
                 disk_width = disk.size * 30
                 disk_height = 20
-                if disk == self.selected_disk and self.dragging:
-                    pygame.draw.rect(
-                        screen,
-                        disk.color,
-                        (disk.rect.x + (x - disk.size * 15 + 10 // 2 - disk.rect.x) * 0.2,
-                         disk.rect.y - (disk.rect.y - (400 - (j + 1) * 20)) * 0.2,
-                         disk_width, disk_height),
-                    )
-                else:
-                    pygame.draw.rect(
-                        screen,
-                        disk.color,
-                        (x - disk_width // 2 + 10 // 2, 400 - (j + 1) * disk_height, disk_width, disk_height),
-                    )
+                pygame.draw.rect(
+                    screen,
+                    disk.color,
+                    (x - disk_width // 2 + 10 // 2, 400 - (j + 1) * disk_height, disk_width, disk_height),
+                )
 
     def add_step(self, move_from, move_to):
         self.steps.append((move_from, move_to))
 
     def handle_events(self, event):
-        target_tower_index = None
-
         if event.type == pygame.MOUSEBUTTONDOWN:
             if event.button == 1:
-                if not self.dragging:
-                    for tower_index, tower in enumerate(self.towers):
-                        if tower:  
-                            top_disk = tower[-1]
-                            x = tower_index * 200 + (800 - 3 * 200) // 2
-                            disk_rect = pygame.Rect(
-                                x - top_disk.size * 15 + 10 // 2,
-                                400 - len(tower) * 20,
-                                top_disk.size * 30,
-                                20,
-                            )
-                            if disk_rect.collidepoint(event.pos):
-                                self.selected_disk = self.towers[tower_index].pop()
-                                self.selected_disk.original_tower = tower_index
-                                self.selected_disk.original_position = len(self.towers[self.selected_disk.original_tower])
-                                self.dragging = True
-                                self.offset_x = event.pos[0] - disk_rect.x
-                                self.offset_y = event.pos[1] - disk_rect.y
+                for tower_index, tower in enumerate(self.towers):
+                    top_disk = self.get_top_disk(tower_index)
+                    if top_disk is not None:  # Проверяем, что башня не пуста
+                        x = tower_index * 200 + (800 - 3 * 200) // 2
+                        disk_rect = pygame.Rect(
+                            x - top_disk.size * 15 + 10 // 2,
+                            400 - len(tower) * 20,
+                            top_disk.size * 30,
+                            20,
+                        )
+                        if disk_rect.collidepoint(event.pos):
+                            self.selected_disk = self.towers[tower_index].pop()
+                            self.selected_disk.original_tower = tower_index
+                            self.selected_disk.original_position = len(self.towers[self.selected_disk.original_tower])
+                            self.dragging = True
+                            self.offset_x = event.pos[0] - disk_rect.x
+                            self.offset_y = event.pos[1] - disk_rect.y
 
-                elif self.dragging and self.selected_disk is not None:
-                    target_tower_index = int((event.pos[0] - 50) / 200)
+        elif event.type == pygame.MOUSEBUTTONUP:
+            if event.button == 1 and self.dragging:
+                target_tower_index = int((event.pos[0] - 50) / 200)
 
-                    if 0 <= target_tower_index < len(self.towers):
-                        target_tower = self.towers[target_tower_index]
-                        if not target_tower or (target_tower[-1] is not None and hasattr(target_tower[-1], 'size') and (not hasattr(self.selected_disk, 'size') or (self.selected_disk.size < target_tower[-1].size))):
-                            if not target_tower or not target_tower[-1] or target_tower[-1].size > self.selected_disk.size:
-                                self.towers[target_tower_index].append(self.selected_disk)
-                                if hasattr(self.selected_disk, 'size'):
-                                    self.add_step(self.selected_disk.size, target_tower_index)
-                            else:
-                                # Если диск размером больше пытаются поставить на диск размером меньше,
-                                # вернем его на исходную башню и позицию
-                                self.towers[self.selected_disk.original_tower].insert(self.selected_disk.original_position, self.selected_disk)
+                if 0 <= target_tower_index < len(self.towers):
+                    target_tower = self.towers[target_tower_index]
+                    original_tower_index = self.selected_disk.original_tower
+                    if not target_tower or (self.get_top_disk(target_tower_index) is not None and self.selected_disk.size < self.get_top_disk(target_tower_index).size):
+                        self.towers[target_tower_index].append(self.selected_disk)
+                        if hasattr(self.selected_disk, 'size'):
+                            self.add_step(self.selected_disk.size, target_tower_index)
+                            original_tower_index = None
+                    else:
+                        # Если диск размером больше пытаются поставить на диск размером меньше,
+                        # вернем его на исходную башню и позицию
+                        self.towers[original_tower_index].insert(self.selected_disk.original_position, self.selected_disk)
 
-                            self.selected_disk = None
-                            self.dragging = False
+                    self.selected_disk = None
+                    self.dragging = False
 
-        if event.type == pygame.MOUSEMOTION:
+        elif event.type == pygame.MOUSEMOTION:
             if self.dragging and self.selected_disk is not None and self.selected_disk.rect is not None:
                 self.selected_disk.rect.x = event.pos[0] - self.offset_x
                 self.selected_disk.rect.y = event.pos[1] - self.offset_y
 
-        if target_tower_index is not None:
-            print(f"Selected Tower: {target_tower_index}")
+        if not self.dragging:
+            self.update()
+
+    def get_top_disk(self, tower_index):
+        tower = self.towers[tower_index]
+        return tower[-1] if tower else None
+
+    def update(self):
+        if self.selected_disk is not None:
+            original_tower_index = self.selected_disk.original_tower
+            if original_tower_index is not None:
+                self.towers[original_tower_index].insert(self.selected_disk.original_position, self.selected_disk)
+                self.selected_disk = None
 
 def create_towers(num_disks):
     return [
