@@ -119,9 +119,7 @@ class GameWindow:
                 self.selected_disk.x = event.pos[0] - self.offset_x
                 self.selected_disk.y = event.pos[1] - self.offset_y
 
-        # Используйте target_tower_index после блока обработки событий
-        if target_tower_index is not None:
-            print(f"Selected Tower: {target_tower_index}")
+        
 
 def create_towers(num_disks):
     return [
