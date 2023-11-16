@@ -1,5 +1,6 @@
 import pygame
 import sys
+import random
 
 class Disk:
     def __init__(self, size, color):
@@ -105,6 +106,7 @@ class GameWindow:
         self.offset_y = 0
         self.restart_game = False
         self.win_animation_counter = 0
+        self.move_counter = 0
 
     def draw_selected_disk(self, screen, mouse_pos):
         if self.selected_disk is not None:
@@ -126,6 +128,9 @@ class GameWindow:
         screen.blit(text, text_rect)
 
     def draw(self, screen, settings_window):
+        font = pygame.font.Font(None, 24)
+        move_text = font.render(f"Ходы: {self.move_counter}", True, (0, 0, 0))
+        screen.blit(move_text, (WIDTH - move_text.get_width() - 10, 10))
         for i, tower in enumerate(self.towers):
             x = i * 200 + (800 - 3 * 200) // 2
             pygame.draw.rect(screen, (0, 0, 0), (x, 400 - 200, 10, 200))
@@ -145,6 +150,7 @@ class GameWindow:
 
     def add_step(self, move_from, move_to):
         self.steps.append((move_from, move_to))
+        self.move_counter += 1
 
     def handle_events(self, event):
         if event.type == pygame.MOUSEBUTTONDOWN:
@@ -211,10 +217,11 @@ class GameWindow:
             if original_tower_index is not None:
                 self.towers[original_tower_index].insert(self.selected_disk.original_position, self.selected_disk)
                 self.selected_disk = None
+                self.move_counter -= 1 
 
 def create_towers(num_disks):
     return [
-        [Disk(num_disks - i, (255, 255 - (25 * i), 20 * i)) for i in range(num_disks)],
+        [Disk(num_disks - i, (random.randint(0,255), random.randint(0,255), random.randint(0,255))) for i in range(num_disks)],
         [],
         []
     ]
@@ -242,7 +249,7 @@ def main():
             elif game_window is not None:
                 game_window.handle_events(event)
                 if game_window.check_win(settings_window):
-                    settings_window.right_animation_counter = 100
+                    settings_window.right_animation_counter = 40
                     settings_window.restart_question_shown = True
                     game_window = None
 
